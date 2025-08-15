@@ -1,5 +1,5 @@
 let player;
-const API_KEY = "YOUR_API_KEY"; // Replace with your YouTube Data API key
+const API_KEY = "AIzaSyAni6A-xfQU7WNtCX9xDyyjVDoZsxDapdk"; // Replace with your YouTube Data API key
 
 // Global SpeechRecognition
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -83,3 +83,4 @@ function handleCommand(command) {
   else if (command.includes("forward")) player.seekTo(player.getCurrentTime() + 10, true);
   else if (command.includes("repeat")) player.seekTo(0, true);
 }
+
