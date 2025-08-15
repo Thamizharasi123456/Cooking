@@ -1,0 +1,44 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: #f8f9fa;
+  margin: 0;
+  padding: 20px;
+}
+
+#search-area {
+  margin-bottom: 20px;
+}
+
+#searchQuery {
+  width: 250px;
+  padding: 8px;
+}
+
+button {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+#results {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.result-item {
+  width: 200px;
+  cursor: pointer;
+}
+
+.result-item img {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.result-title {
+  font-size: 14px;
+  margin-top: 5px;
+}
