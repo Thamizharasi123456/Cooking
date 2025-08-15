@@ -1,5 +1,5 @@
 let player;
-const API_KEY = "AIzaSyAni6A-xfQU7WNtCX9xDyyjVDoZsxDapdk"; // Replace with your YouTube Data API key
+const API_KEY = "YOUR_API_KEY"; // Replace with your valid YouTube Data API key
 
 // Global SpeechRecognition
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -21,22 +21,41 @@ if (SpeechRecognition) {
   alert("Speech Recognition not supported in this browser.");
 }
 
-// Start recognition via user interaction (mobile-friendly)
+// Start recognition via user interaction
 document.getElementById("startBtn").addEventListener("click", () => {
   if (recognition) recognition.start();
 });
 
-// YouTube search
+// YouTube search button
 document.getElementById("searchBtn").addEventListener("click", () => {
   const query = document.getElementById("searchQuery").value.trim();
-  if (query) searchYouTube(query);
+  if (!query) {
+    alert("Please enter a search term.");
+    return;
+  }
+  searchYouTube(query);
 });
 
-function searchYouTube(query) {
-  fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&q=${encodeURIComponent(query)}&key=${API_KEY}`)
-    .then(res => res.json())
-    .then(data => displayResults(data.items))
-    .catch(err => console.error("YouTube API Error:", err));
+async function searchYouTube(query) {
+  try {
+    const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&q=${encodeURIComponent(query)}&key=${API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.items || data.items.length === 0) {
+      alert("No videos found.");
+      return;
+    }
+
+    displayResults(data.items);
+  } catch (err) {
+    console.error("YouTube API Error:", err);
+    alert("Error fetching YouTube videos. Check your API key and internet connection.");
+  }
 }
 
 function displayResults(videos) {
@@ -83,4 +102,3 @@ function handleCommand(command) {
   else if (command.includes("forward")) player.seekTo(player.getCurrentTime() + 10, true);
   else if (command.includes("repeat")) player.seekTo(0, true);
 }
-
