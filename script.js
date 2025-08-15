@@ -1,5 +1,7 @@
 let player;
 const API_KEY = "AIzaSyAni6A-xfQU7WNtCX9xDyyjVDoZsxDapdk"; // Replace with your key
+let recognition;
+let recognizing = false;
 
 // Called when YouTube IFrame API is ready
 function onYouTubeIframeAPIReady() {
@@ -35,41 +37,67 @@ function displayResults(videos) {
       <p class="result-title">${video.snippet.title}</p>
     `;
     div.addEventListener("click", () => {
-      loadVideo(video.id.videoId);
-      startVoiceRecognition();
+      openVideoPage(video.id.videoId, video.snippet.title);
     });
     resultsDiv.appendChild(div);
   });
 }
 
-function loadVideo(videoId) {
-  if (player) {
-    player.loadVideoById(videoId);
-  } else {
-    createPlayer(videoId);
-  }
+// Open video in a "full screen" page like YouTube
+function openVideoPage(videoId, title) {
+  const playerPage = document.createElement("div");
+  playerPage.className = "player-page";
+  playerPage.innerHTML = `
+    <button class="close-btn">✖</button>
+    <h2>${title}</h2>
+    <div id="player"></div>
+    <p id="status">🎤 Waiting for command...</p>
+  `;
+  document.body.innerHTML = ""; // clear old search page
+  document.body.appendChild(playerPage);
+
+  createPlayer(videoId);
+  initVoiceRecognition();
+  startListening();
+
+  document.querySelector(".close-btn").addEventListener("click", () => {
+    location.reload(); // go back to search
+  });
 }
 
 function createPlayer(videoId) {
   player = new YT.Player('player', {
     height: '360',
-    width: '640',
+    width: '100%',
     videoId: videoId,
     playerVars: { autoplay: 0, controls: 1 }
   });
 }
 
 // Voice recognition setup
-function startVoiceRecognition() {
+function initVoiceRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
     alert("Speech Recognition not supported in this browser.");
     return;
   }
 
-  const recognition = new SpeechRecognition();
+  recognition = new SpeechRecognition();
   recognition.continuous = true;
   recognition.lang = 'en-US';
+
+  recognition.onstart = () => {
+    recognizing = true;
+    console.log("Voice recognition started");
+  };
+
+  recognition.onend = () => {
+    recognizing = false;
+    console.log("Voice recognition stopped");
+    setTimeout(() => {
+      if (!recognizing) recognition.start();
+    }, 500);
+  };
 
   recognition.onresult = (event) => {
     const command = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
@@ -80,7 +108,10 @@ function startVoiceRecognition() {
   recognition.onerror = (event) => {
     console.error("Speech recognition error:", event.error);
   };
+}
 
+function startListening() {
+  if (!recognition) initVoiceRecognition();
   recognition.start();
 }
 
@@ -105,5 +136,9 @@ function handleCommand(command) {
   } 
   else if (command.includes("repeat")) {
     player.seekTo(0, true);
+  }
+  else if (command.includes("skip")) {
+    // Skip forward 5 seconds for ad skipping
+    player.seekTo(player.getCurrentTime() + 5, true);
   }
 }
