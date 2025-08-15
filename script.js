@@ -1,7 +1,6 @@
 let player;
-const API_KEY = "AIzaSyAni6A-xfQU7WNtCX9xDyyjVDoZsxDapdk"; // Replace with your key
-let recognition;
-let recognizing = false;
+const API_KEY = "AIzaSyAni6A-xfQU7WNtCX9xDyyjVDoZsxDapdk"; // Your API Key
+let recognition; // Global to reuse
 
 // Called when YouTube IFrame API is ready
 function onYouTubeIframeAPIReady() {
@@ -37,44 +36,31 @@ function displayResults(videos) {
       <p class="result-title">${video.snippet.title}</p>
     `;
     div.addEventListener("click", () => {
-      openVideoPage(video.id.videoId, video.snippet.title);
+      loadVideo(video.id.videoId);
+      initVoiceRecognition(); // Initialize when video starts
     });
     resultsDiv.appendChild(div);
   });
 }
 
-// Open video in a "full screen" page like YouTube
-function openVideoPage(videoId, title) {
-  const playerPage = document.createElement("div");
-  playerPage.className = "player-page";
-  playerPage.innerHTML = `
-    <button class="close-btn">✖</button>
-    <h2>${title}</h2>
-    <div id="player"></div>
-    <p id="status">🎤 Waiting for command...</p>
-  `;
-  document.body.innerHTML = ""; // clear old search page
-  document.body.appendChild(playerPage);
-
-  createPlayer(videoId);
-  initVoiceRecognition();
-  startListening();
-
-  document.querySelector(".close-btn").addEventListener("click", () => {
-    location.reload(); // go back to search
-  });
+function loadVideo(videoId) {
+  if (player) {
+    player.loadVideoById(videoId);
+  } else {
+    createPlayer(videoId);
+  }
 }
 
 function createPlayer(videoId) {
   player = new YT.Player('player', {
     height: '360',
-    width: '100%',
+    width: '640',
     videoId: videoId,
     playerVars: { autoplay: 0, controls: 1 }
   });
 }
 
-// Voice recognition setup
+// Initialize voice recognition (works for mobile + desktop)
 function initVoiceRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
@@ -83,24 +69,12 @@ function initVoiceRecognition() {
   }
 
   recognition = new SpeechRecognition();
-  recognition.continuous = true;
+  recognition.continuous = false; // Better for mobile
+  recognition.interimResults = false;
   recognition.lang = 'en-US';
 
-  recognition.onstart = () => {
-    recognizing = true;
-    console.log("Voice recognition started");
-  };
-
-  recognition.onend = () => {
-    recognizing = false;
-    console.log("Voice recognition stopped");
-    setTimeout(() => {
-      if (!recognizing) recognition.start();
-    }, 500);
-  };
-
   recognition.onresult = (event) => {
-    const command = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+    const command = event.results[0][0].transcript.trim().toLowerCase();
     document.getElementById("status").textContent = `🎤 Heard: "${command}"`;
     handleCommand(command);
   };
@@ -108,14 +82,18 @@ function initVoiceRecognition() {
   recognition.onerror = (event) => {
     console.error("Speech recognition error:", event.error);
   };
-}
 
-function startListening() {
-  if (!recognition) initVoiceRecognition();
+  recognition.onend = () => {
+    // Restart automatically on mobile
+    if (/Mobi|Android/i.test(navigator.userAgent)) {
+      setTimeout(() => recognition.start(), 400);
+    }
+  };
+
   recognition.start();
 }
 
-// Handle commands
+// Handle allowed commands only
 function handleCommand(command) {
   if (!player) return;
 
@@ -138,7 +116,6 @@ function handleCommand(command) {
     player.seekTo(0, true);
   }
   else if (command.includes("skip")) {
-    // Skip forward 5 seconds for ad skipping
-    player.seekTo(player.getCurrentTime() + 5, true);
+    player.seekTo(player.getCurrentTime() + 5, true); // Skip ahead
   }
 }
