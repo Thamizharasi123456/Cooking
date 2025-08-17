@@ -56,7 +56,7 @@ function createPlayer(videoId) {
   });
 }
 
-// Start continuous voice recognition
+// Start continuous + faster voice recognition
 function startVoiceRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
@@ -66,20 +66,28 @@ function startVoiceRecognition() {
 
   recognition = new SpeechRecognition();
   recognition.continuous = true;
-  recognition.interimResults = false;
+  recognition.interimResults = true; // ✅ faster live feedback
   recognition.lang = 'en-US';
 
   recognition.onresult = (event) => {
-    const command = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-    document.getElementById("status").textContent = `🎤 Heard: "${command}"`;
-    handleCommand(command);
+    let transcript = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
+    }
+
+    transcript = transcript.trim().toLowerCase();
+    document.getElementById("status").textContent = `🎤 Heard: "${transcript}"`;
+
+    // ✅ Only execute commands when browser marks it as final
+    if (event.results[event.results.length - 1].isFinal) {
+      handleCommand(transcript);
+    }
   };
 
   recognition.onerror = (event) => {
     console.error("Speech recognition error:", event.error);
   };
 
-  // 🔁 Restart automatically when it ends
   recognition.onend = () => {
     console.log("Restarting speech recognition...");
     recognition.start();
