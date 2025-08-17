@@ -1,7 +1,7 @@
 let player;
-const API_KEY = "AIzaSyAni6A-xfQU7WNtCX9xDyyjVDoZsxDapdk"; // Replace with your YouTube Data API key
-let recognition; // Global SpeechRecognition instance
-let voiceStarted = false; // Ensure voice starts only once
+const API_KEY = "AIzaSyAni6A-xfQU7WNtCX9xDyyjVDoZsxDapdk"; // Replace with your API key
+let recognition;
+let voiceStarted = false;
 
 // YouTube search button
 document.getElementById("searchBtn").addEventListener("click", () => {
@@ -32,7 +32,7 @@ function displayResults(videos) {
     div.addEventListener("click", () => {
       loadVideo(video.id.videoId);
       if (!voiceStarted) {
-        startVoiceRecognition(); // Start voice recognition on first click
+        startVoiceRecognition(); // Start recognition only once
         voiceStarted = true;
       }
     });
@@ -66,6 +66,7 @@ function startVoiceRecognition() {
 
   recognition = new SpeechRecognition();
   recognition.continuous = true;
+  recognition.interimResults = false;
   recognition.lang = 'en-US';
 
   recognition.onresult = (event) => {
@@ -76,6 +77,12 @@ function startVoiceRecognition() {
 
   recognition.onerror = (event) => {
     console.error("Speech recognition error:", event.error);
+  };
+
+  // 🔁 Restart automatically when it ends
+  recognition.onend = () => {
+    console.log("Restarting speech recognition...");
+    recognition.start();
   };
 
   recognition.start();
@@ -92,3 +99,8 @@ function handleCommand(command) {
   else if (command.includes("forward")) player.seekTo(player.getCurrentTime() + 10, true);
   else if (command.includes("repeat")) player.seekTo(0, true);
 }
+
+// Load YouTube IFrame API
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.body.appendChild(tag);
